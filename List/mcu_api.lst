@@ -1,0 +1,1289 @@
+C51 COMPILER V9.54   MCU_API                                                               02/16/2021 21:59:40 PAGE 1   
+
+
+C51 COMPILER V9.54, COMPILATION OF MODULE MCU_API
+OBJECT MODULE PLACED IN .\Obj\mcu_api.obj
+COMPILER INVOKED BY: D:\Keil_v5\C51\BIN\C51.EXE mcu_sdk\mcu_api.c LARGE OPTIMIZE(9,SPEED) BROWSE INCDIR(.\;.\src;.\mcu_s
+                    -dk) DEBUG OBJECTEXTEND PRINT(.\List\mcu_api.lst) TABS(2) OBJECT(.\Obj\mcu_api.obj)
+
+line level    source
+
+   1          /**********************************Copyright (c)**********************************
+   2          **                       版权所有 (C), 2015-2020, 涂鸦科技
+   3          **
+   4          **                             http://www.tuya.com
+   5          **
+   6          *********************************************************************************/
+   7          /**
+   8           * @file    mcu_api.c
+   9           * @author  涂鸦综合协议开发组
+  10           * @version v2.5.6
+  11           * @date    2020.12.16
+  12           * @brief   用户需要主动调用的函数都在该文件内
+  13           */
+  14          
+  15          /****************************** 免责声明 ！！！ *******************************
+  16          由于MCU类型和编译环境多种多样，所以此代码仅供参考，用户请自行把控最终代�
+             -��质量，
+  17          涂鸦不对MCU功能结果负责。
+  18          ******************************************************************************/
+  19          
+  20          #define MCU_API_GLOBAL
+  21          
+  22          #include "wifi.h"
+  23          
+  24          /**
+  25           * @brief  hex转bcd
+  26           * @param[in] {Value_H} 高字节
+  27           * @param[in] {Value_L} 低字节
+  28           * @return 转换完成后数据
+  29           */
+  30          unsigned char hex_to_bcd(unsigned char Value_H,unsigned char Value_L)
+  31          {
+  32   1          unsigned char bcd_value;
+  33   1          
+  34   1          if((Value_H >= '0') && (Value_H <= '9'))
+  35   1              Value_H -= '0';
+  36   1          else if((Value_H >= 'A') && (Value_H <= 'F'))
+  37   1              Value_H = Value_H - 'A' + 10;
+  38   1          else if((Value_H >= 'a') && (Value_H <= 'f'))
+  39   1              Value_H = Value_H - 'a' + 10;
+  40   1           
+  41   1          bcd_value = Value_H & 0x0f;
+  42   1          
+  43   1          bcd_value <<= 4;
+  44   1          if((Value_L >= '0') && (Value_L <= '9'))
+  45   1              Value_L -= '0';
+  46   1          else if((Value_L >= 'A') && (Value_L <= 'F'))
+  47   1              Value_L = Value_L - 'a' + 10;
+  48   1          else if((Value_L >= 'a') && (Value_L <= 'f'))
+  49   1              Value_L = Value_L - 'a' + 10;
+  50   1          
+  51   1          bcd_value |= Value_L & 0x0f;
+  52   1      
+  53   1          return bcd_value;
+C51 COMPILER V9.54   MCU_API                                                               02/16/2021 21:59:40 PAGE 2   
+
+  54   1      }
+  55          
+  56          /**
+  57           * @brief  求字符串长度
+  58           * @param[in] {str} 字符串地址
+  59           * @return 数据长度
+  60           */
+  61          unsigned long my_strlen(unsigned char *str)  
+  62          {
+  63   1          unsigned long len = 0;
+  64   1          if(str == NULL) { 
+  65   2              return 0;
+  66   2          }
+  67   1          
+  68   1          for(len = 0; *str ++ != '\0'; ) {
+  69   2              len ++;
+  70   2          }
+  71   1          
+  72   1          return len;
+  73   1      }
+  74          
+  75          /**
+  76           * @brief  把src所指内存区域的前count个字节设置成字符c
+  77           * @param[out] {src} 待设置的内存首地址
+  78           * @param[in] {ch} 设置的字符
+  79           * @param[in] {count} 设置的内存长度
+  80           * @return 待设置的内存首地址
+  81           */
+  82          void *my_memset(void *src,unsigned char ch,unsigned short count)
+  83          {
+  84   1          unsigned char *tmp = (unsigned char *)src;
+  85   1          
+  86   1          if(src == NULL) {
+  87   2              return NULL;
+  88   2          }
+  89   1          
+  90   1          while(count --) {
+  91   2              *tmp ++ = ch;
+  92   2          }
+  93   1          
+  94   1          return src;
+  95   1      }
+  96          
+  97          /**
+  98           * @brief  内存拷贝
+  99           * @param[out] {dest} 目标地址
+ 100           * @param[in] {src} 源地址
+ 101           * @param[in] {count} 拷贝数据个数
+ 102           * @return 数据处理完后的源地址
+ 103           */
+ 104          void *my_memcpy(void *dest, const void *src, unsigned short count)  
+ 105          {  
+ 106   1          unsigned char *pdest = (unsigned char *)dest;  
+ 107   1          const unsigned char *psrc  = (const unsigned char *)src;  
+ 108   1          unsigned short i;
+ 109   1          
+ 110   1          if(dest == NULL || src == NULL) { 
+ 111   2              return NULL;
+ 112   2          }
+ 113   1          
+ 114   1          if((pdest <= psrc) || (pdest > psrc + count)) {  
+ 115   2              for(i = 0; i < count; i ++) {  
+C51 COMPILER V9.54   MCU_API                                                               02/16/2021 21:59:40 PAGE 3   
+
+ 116   3                  pdest[i] = psrc[i];  
+ 117   3              }  
+ 118   2          }else {
+ 119   2              for(i = count; i > 0; i --) {  
+ 120   3                  pdest[i - 1] = psrc[i - 1];  
+ 121   3              }  
+ 122   2          }  
+ 123   1          
+ 124   1          return dest;  
+ 125   1      }
+ 126          
+ 127          /**
+ 128           * @brief  字符串拷贝
+ 129           * @param[in] {dest} 目标地址
+ 130           * @param[in] {src} 源地址
+ 131           * @return 数据处理完后的源地址
+ 132           */
+ 133          char *my_strcpy(char *dest, const char *src)  
+ 134          {
+ 135   1        char *p = dest;
+ 136   1        
+ 137   1          if((NULL == dest) || (NULL == src)) {
+ 138   2              return NULL;
+ 139   2          }
+ 140   1          
+ 141   1         // char *p = dest;
+ 142   1          while(*src!='\0') {
+ 143   2              *dest++ = *src++;
+ 144   2          }
+ 145   1          *dest = '\0';
+ 146   1          return p;
+ 147   1      }
+ 148          
+ 149          /**
+ 150           * @brief  字符串比较
+ 151           * @param[in] {s1} 字符串 1
+ 152           * @param[in] {s2} 字符串 2
+ 153           * @return 大小比较值
+ 154           * -         0:s1=s2
+ 155           * -         <0:s1<s2
+ 156           * -         >0:s1>s2
+ 157           */
+ 158          int my_strcmp(char *s1 , char *s2)
+ 159          {
+ 160   1          while( *s1 && *s2 && *s1 == *s2 ) {
+ 161   2              s1++;
+ 162   2              s2++;
+ 163   2          }
+ 164   1          return *s1 - *s2;
+ 165   1      }
+ 166          
+ 167          /**
+ 168           * @brief  将int类型拆分四个字节
+ 169           * @param[in] {number} 4字节原数据
+ 170           * @param[out] {value} 处理完成后4字节数据
+ 171           * @return Null
+ 172           */
+ 173          void int_to_byte(unsigned long number,unsigned char value[4])
+ 174          {
+ 175   1          value[0] = number >> 24;
+ 176   1          value[1] = number >> 16;
+ 177   1          value[2] = number >> 8;
+C51 COMPILER V9.54   MCU_API                                                               02/16/2021 21:59:40 PAGE 4   
+
+ 178   1          value[3] = number & 0xff;
+ 179   1      }
+ 180          
+ 181          /**
+ 182           * @brief  将4字节合并为1个32bit变量
+ 183           * @param[in] {value} 4字节数组
+ 184           * @return 合并完成后的32bit变量
+ 185           */
+ 186          unsigned long byte_to_int(const unsigned char value[4])
+ 187          {
+ 188   1          unsigned long nubmer = 0;
+ 189   1      
+ 190   1          nubmer = (unsigned long)value[0];
+ 191   1          nubmer <<= 8;
+ 192   1          nubmer |= (unsigned long)value[1];
+ 193   1          nubmer <<= 8;
+ 194   1          nubmer |= (unsigned long)value[2];
+ 195   1          nubmer <<= 8;
+ 196   1          nubmer |= (unsigned long)value[3];
+ 197   1          
+ 198   1          return nubmer;
+ 199   1      }
+ 200          
+ 201          /**
+ 202           * @brief  raw型dp数据上传
+ 203           * @param[in] {dpid} dpid号
+ 204           * @param[in] {value} 当前dp值指针
+ 205           * @param[in] {len} 数据长度
+ 206           * @return Null
+ 207           * @note   Null
+ 208           */
+ 209          unsigned char mcu_dp_raw_update(unsigned char dpid,const unsigned char value[],unsigned short len)
+ 210          {
+ 211   1          unsigned short send_len = 0;
+ 212   1          
+ 213   1          if(stop_update_flag == ENABLE)
+ 214   1              return SUCCESS;
+ 215   1          //
+ 216   1          send_len = set_wifi_uart_byte(send_len,dpid);
+ 217   1          send_len = set_wifi_uart_byte(send_len,DP_TYPE_RAW);
+ 218   1          //
+ 219   1          send_len = set_wifi_uart_byte(send_len,len / 0x100);
+ 220   1          send_len = set_wifi_uart_byte(send_len,len % 0x100);
+ 221   1          //
+ 222   1          send_len = set_wifi_uart_buffer(send_len,(unsigned char *)value,len);
+ 223   1          
+ 224   1          wifi_uart_write_frame(STATE_UPLOAD_CMD,MCU_TX_VER,send_len);
+ 225   1          
+ 226   1          return SUCCESS;
+ 227   1      }
+ 228          
+ 229          /**
+ 230           * @brief  bool型dp数据上传
+ 231           * @param[in] {dpid} dpid号
+ 232           * @param[in] {value} 当前dp值
+ 233           * @return Null
+ 234           * @note   Null
+ 235           */
+ 236          unsigned char mcu_dp_bool_update(unsigned char dpid,unsigned char value)
+ 237          {
+ 238   1          unsigned short send_len = 0;
+ 239   1          
+C51 COMPILER V9.54   MCU_API                                                               02/16/2021 21:59:40 PAGE 5   
+
+ 240   1          if(stop_update_flag == ENABLE)
+ 241   1              return SUCCESS;
+ 242   1          
+ 243   1          send_len = set_wifi_uart_byte(send_len,dpid);
+ 244   1          send_len = set_wifi_uart_byte(send_len,DP_TYPE_BOOL);
+ 245   1          //
+ 246   1          send_len = set_wifi_uart_byte(send_len,0);
+ 247   1          send_len = set_wifi_uart_byte(send_len,1);
+ 248   1          //
+ 249   1          if(value == FALSE) {
+ 250   2              send_len = set_wifi_uart_byte(send_len,FALSE);
+ 251   2          }else {
+ 252   2              send_len = set_wifi_uart_byte(send_len,1);
+ 253   2          }
+ 254   1          
+ 255   1          wifi_uart_write_frame(STATE_UPLOAD_CMD, MCU_TX_VER, send_len);
+ 256   1          
+ 257   1          return SUCCESS;
+ 258   1      }
+ 259          
+ 260          /**
+ 261           * @brief  value型dp数据上传
+ 262           * @param[in] {dpid} dpid号
+ 263           * @param[in] {value} 当前dp值
+ 264           * @return Null
+ 265           * @note   Null
+ 266           */
+ 267          unsigned char mcu_dp_value_update(unsigned char dpid,unsigned long value)
+ 268          {
+ 269   1          unsigned short send_len = 0;
+ 270   1          
+ 271   1          if(stop_update_flag == ENABLE)
+ 272   1              return SUCCESS;
+ 273   1          
+ 274   1          send_len = set_wifi_uart_byte(send_len,dpid);
+ 275   1          send_len = set_wifi_uart_byte(send_len,DP_TYPE_VALUE);
+ 276   1          //
+ 277   1          send_len = set_wifi_uart_byte(send_len,0);
+ 278   1          send_len = set_wifi_uart_byte(send_len,4);
+ 279   1          //
+ 280   1          send_len = set_wifi_uart_byte(send_len,value >> 24);
+ 281   1          send_len = set_wifi_uart_byte(send_len,value >> 16);
+ 282   1          send_len = set_wifi_uart_byte(send_len,value >> 8);
+ 283   1          send_len = set_wifi_uart_byte(send_len,value & 0xff);
+ 284   1          
+ 285   1          wifi_uart_write_frame(STATE_UPLOAD_CMD,MCU_TX_VER,send_len);
+ 286   1          
+ 287   1          return SUCCESS;
+ 288   1      }
+ 289          
+ 290          /**
+ 291           * @brief  string型dp数据上传
+ 292           * @param[in] {dpid} dpid号
+ 293           * @param[in] {value} 当前dp值指针
+ 294           * @param[in] {len} 数据长度
+ 295           * @return Null
+ 296           * @note   Null
+ 297           */
+ 298          unsigned char mcu_dp_string_update(unsigned char dpid,const unsigned char value[],unsigned short len)
+ 299          {
+ 300   1          unsigned short send_len = 0;
+ 301   1          
+C51 COMPILER V9.54   MCU_API                                                               02/16/2021 21:59:40 PAGE 6   
+
+ 302   1          if(stop_update_flag == ENABLE)
+ 303   1              return SUCCESS;
+ 304   1          //
+ 305   1          send_len = set_wifi_uart_byte(send_len,dpid);
+ 306   1          send_len = set_wifi_uart_byte(send_len,DP_TYPE_STRING);
+ 307   1          //
+ 308   1          send_len = set_wifi_uart_byte(send_len,len / 0x100);
+ 309   1          send_len = set_wifi_uart_byte(send_len,len % 0x100);
+ 310   1          //
+ 311   1          send_len = set_wifi_uart_buffer(send_len,(unsigned char *)value,len);
+ 312   1          
+ 313   1          wifi_uart_write_frame(STATE_UPLOAD_CMD,MCU_TX_VER,send_len);
+ 314   1          
+ 315   1          return SUCCESS;
+ 316   1      }
+ 317          
+ 318          /**
+ 319           * @brief  enum型dp数据上传
+ 320           * @param[in] {dpid} dpid号
+ 321           * @param[in] {value} 当前dp值
+ 322           * @return Null
+ 323           * @note   Null
+ 324           */
+ 325          unsigned char mcu_dp_enum_update(unsigned char dpid,unsigned char value)
+ 326          {
+ 327   1          unsigned short send_len = 0;
+ 328   1          
+ 329   1          if(stop_update_flag == ENABLE)
+ 330   1              return SUCCESS;
+ 331   1          
+ 332   1          send_len = set_wifi_uart_byte(send_len,dpid);
+ 333   1          send_len = set_wifi_uart_byte(send_len,DP_TYPE_ENUM);
+ 334   1          //
+ 335   1          send_len = set_wifi_uart_byte(send_len,0);
+ 336   1          send_len = set_wifi_uart_byte(send_len,1);
+ 337   1          //
+ 338   1          send_len = set_wifi_uart_byte(send_len,value);
+ 339   1          
+ 340   1          wifi_uart_write_frame(STATE_UPLOAD_CMD,MCU_TX_VER,send_len);
+ 341   1          
+ 342   1          return SUCCESS;
+ 343   1      }
+ 344          
+ 345          /**
+ 346           * @brief  fault型dp数据上传
+ 347           * @param[in] {dpid} dpid号
+ 348           * @param[in] {value} 当前dp值
+ 349           * @return Null
+ 350           * @note   Null
+ 351           */
+ 352          unsigned char mcu_dp_fault_update(unsigned char dpid,unsigned long value)
+ 353          {
+ 354   1          unsigned short send_len = 0;
+ 355   1           
+ 356   1          if(stop_update_flag == ENABLE)
+ 357   1              return SUCCESS;
+ 358   1          
+ 359   1          send_len = set_wifi_uart_byte(send_len,dpid);
+ 360   1          send_len = set_wifi_uart_byte(send_len,DP_TYPE_BITMAP);
+ 361   1          //
+ 362   1          send_len = set_wifi_uart_byte(send_len,0);
+ 363   1          
+C51 COMPILER V9.54   MCU_API                                                               02/16/2021 21:59:40 PAGE 7   
+
+ 364   1          if((value | 0xff) == 0xff) {
+ 365   2              send_len = set_wifi_uart_byte(send_len,1);
+ 366   2              send_len = set_wifi_uart_byte(send_len,value);
+ 367   2          }else if((value | 0xffff) == 0xffff) {
+ 368   2              send_len = set_wifi_uart_byte(send_len,2);
+ 369   2              send_len = set_wifi_uart_byte(send_len,value >> 8);
+ 370   2              send_len = set_wifi_uart_byte(send_len,value & 0xff);
+ 371   2          }else {
+ 372   2              send_len = set_wifi_uart_byte(send_len,4);
+ 373   2              send_len = set_wifi_uart_byte(send_len,value >> 24);
+ 374   2              send_len = set_wifi_uart_byte(send_len,value >> 16);
+ 375   2              send_len = set_wifi_uart_byte(send_len,value >> 8);
+ 376   2              send_len = set_wifi_uart_byte(send_len,value & 0xff);
+ 377   2          }    
+ 378   1          
+ 379   1          wifi_uart_write_frame(STATE_UPLOAD_CMD, MCU_TX_VER, send_len);
+ 380   1      
+ 381   1          return SUCCESS;
+ 382   1      }
+ 383          
+ 384          #ifdef MCU_DP_UPLOAD_SYN
+              /**
+               * @brief  raw型dp数据同步上传
+               * @param[in] {dpid} dpid号
+               * @param[in] {value} 当前dp值指针
+               * @param[in] {len} 数据长度
+               * @return Null
+               * @note   Null
+               */
+              unsigned char mcu_dp_raw_update_syn(unsigned char dpid,const unsigned char value[],unsigned short len)
+              {
+                  unsigned short send_len = 0;
+                  
+                  if(stop_update_flag == ENABLE)
+                      return SUCCESS;
+                  //
+                  send_len = set_wifi_uart_byte(send_len,dpid);
+                  send_len = set_wifi_uart_byte(send_len,DP_TYPE_RAW);
+                  //
+                  send_len = set_wifi_uart_byte(send_len,len / 0x100);
+                  send_len = set_wifi_uart_byte(send_len,len % 0x100);
+                  //
+                  send_len = set_wifi_uart_buffer(send_len,(unsigned char *)value,len);
+                  
+                  wifi_uart_write_frame(STATE_UPLOAD_SYN_CMD,MCU_TX_VER,send_len);
+                  
+                  return SUCCESS;
+              }
+              
+              /**
+               * @brief  bool型dp数据同步上传
+               * @param[in] {dpid} dpid号
+               * @param[in] {value} 当前dp值指针
+               * @return Null
+               * @note   Null
+               */
+              unsigned char mcu_dp_bool_update_syn(unsigned char dpid,unsigned char value)
+              {
+                  unsigned short send_len = 0;
+                  
+                  if(stop_update_flag == ENABLE)
+                      return SUCCESS;
+C51 COMPILER V9.54   MCU_API                                                               02/16/2021 21:59:40 PAGE 8   
+
+                  
+                  send_len = set_wifi_uart_byte(send_len,dpid);
+                  send_len = set_wifi_uart_byte(send_len,DP_TYPE_BOOL);
+                  //
+                  send_len = set_wifi_uart_byte(send_len,0);
+                  send_len = set_wifi_uart_byte(send_len,1);
+                  //
+                  if(value == FALSE) {
+                      send_len = set_wifi_uart_byte(send_len,FALSE);
+                  }else {
+                      send_len = set_wifi_uart_byte(send_len,1);
+                  }
+                  
+                  wifi_uart_write_frame(STATE_UPLOAD_SYN_CMD, MCU_TX_VER, send_len);
+                  
+                  return SUCCESS;
+              }
+              
+              /**
+               * @brief  value型dp数据同步上传
+               * @param[in] {dpid} dpid号
+               * @param[in] {value} 当前dp值指针
+               * @return Null
+               * @note   Null
+               */
+              unsigned char mcu_dp_value_update_syn(unsigned char dpid,unsigned long value)
+              {
+                  unsigned short send_len = 0;
+                  
+                  if(stop_update_flag == ENABLE)
+                      return SUCCESS;
+                  
+                  send_len = set_wifi_uart_byte(send_len,dpid);
+                  send_len = set_wifi_uart_byte(send_len,DP_TYPE_VALUE);
+                  //
+                  send_len = set_wifi_uart_byte(send_len,0);
+                  send_len = set_wifi_uart_byte(send_len,4);
+                  //
+                  send_len = set_wifi_uart_byte(send_len,value >> 24);
+                  send_len = set_wifi_uart_byte(send_len,value >> 16);
+                  send_len = set_wifi_uart_byte(send_len,value >> 8);
+                  send_len = set_wifi_uart_byte(send_len,value & 0xff);
+                  
+                  wifi_uart_write_frame(STATE_UPLOAD_SYN_CMD, MCU_TX_VER, send_len);
+                  
+                  return SUCCESS;
+              }
+              
+              /**
+               * @brief  string型dp数据同步上传
+               * @param[in] {dpid} dpid号
+               * @param[in] {value} 当前dp值指针
+               * @param[in] {len} 数据长度
+               * @return Null
+               * @note   Null
+               */
+              unsigned char mcu_dp_string_update_syn(unsigned char dpid,const unsigned char value[],unsigned short len)
+              {
+                  unsigned short send_len = 0;
+                  
+                  if(stop_update_flag == ENABLE)
+                      return SUCCESS;
+C51 COMPILER V9.54   MCU_API                                                               02/16/2021 21:59:40 PAGE 9   
+
+                  //
+                  send_len = set_wifi_uart_byte(send_len,dpid);
+                  send_len = set_wifi_uart_byte(send_len,DP_TYPE_STRING);
+                  //
+                  send_len = set_wifi_uart_byte(send_len,len / 0x100);
+                  send_len = set_wifi_uart_byte(send_len,len % 0x100);
+                  //
+                  send_len = set_wifi_uart_buffer(send_len,(unsigned char *)value,len);
+                  
+                  wifi_uart_write_frame(STATE_UPLOAD_SYN_CMD,MCU_TX_VER,send_len);
+                  
+                  return SUCCESS;
+              }
+              
+              /**
+               * @brief  enum型dp数据同步上传
+               * @param[in] {dpid} dpid号
+               * @param[in] {value} 当前dp值指针
+               * @return Null
+               * @note   Null
+               */
+              unsigned char mcu_dp_enum_update_syn(unsigned char dpid,unsigned char value)
+              {
+                  unsigned short send_len = 0;
+                  
+                  if(stop_update_flag == ENABLE)
+                      return SUCCESS;
+                  
+                  send_len = set_wifi_uart_byte(send_len,dpid);
+                  send_len = set_wifi_uart_byte(send_len,DP_TYPE_ENUM);
+                  //
+                  send_len = set_wifi_uart_byte(send_len,0);
+                  send_len = set_wifi_uart_byte(send_len,1);
+                  
+                  send_len = set_wifi_uart_byte(send_len,value);
+                  
+                  wifi_uart_write_frame(STATE_UPLOAD_SYN_CMD,MCU_TX_VER,send_len);
+                  
+                  return SUCCESS;
+              }
+              
+              /**
+               * @brief  fault型dp数据同步上传
+               * @param[in] {dpid} dpid号
+               * @param[in] {value} 当前dp值指针
+               * @return Null
+               * @note   Null
+               */
+              unsigned char mcu_dp_fault_update_syn(unsigned char dpid,unsigned long value)
+              {
+                  unsigned short send_len = 0;
+                   
+                  if(stop_update_flag == ENABLE)
+                      return SUCCESS;
+                  
+                  send_len = set_wifi_uart_byte(send_len,dpid);
+                  send_len = set_wifi_uart_byte(send_len,DP_TYPE_BITMAP);
+                  //
+                  send_len = set_wifi_uart_byte(send_len,0);
+                  
+                  if((value | 0xff) == 0xff) {
+                      send_len = set_wifi_uart_byte(send_len,1);
+C51 COMPILER V9.54   MCU_API                                                               02/16/2021 21:59:40 PAGE 10  
+
+                      send_len = set_wifi_uart_byte(send_len,value);
+                  }else if((value | 0xffff) == 0xffff) {
+                      send_len = set_wifi_uart_byte(send_len,2);
+                      send_len = set_wifi_uart_byte(send_len,value >> 8);
+                      send_len = set_wifi_uart_byte(send_len,value & 0xff);
+                  }else {
+                      send_len = set_wifi_uart_byte(send_len,4);
+                      send_len = set_wifi_uart_byte(send_len,value >> 24);
+                      send_len = set_wifi_uart_byte(send_len,value >> 16);
+                      send_len = set_wifi_uart_byte(send_len,value >> 8);
+                      send_len = set_wifi_uart_byte(send_len,value & 0xff);
+                  }    
+                  
+                  wifi_uart_write_frame(STATE_UPLOAD_SYN_CMD,MCU_TX_VER,send_len);
+              
+                  return SUCCESS;
+              }
+              #endif
+ 568          
+ 569          /**
+ 570           * @brief  mcu获取bool型下发dp值
+ 571           * @param[in] {value} dp数据缓冲区地址
+ 572           * @param[in] {len} dp数据长度
+ 573           * @return 当前dp值
+ 574           * @note   Null
+ 575           */
+ 576          unsigned char mcu_get_dp_download_bool(const unsigned char value[],unsigned short len)
+ 577          {
+ 578   1          return(value[0]);
+ 579   1      }
+*** WARNING C280 IN LINE 576 OF mcu_sdk\mcu_api.c: 'len': unreferenced local variable
+ 580          
+ 581          /**
+ 582           * @brief  mcu获取enum型下发dp值
+ 583           * @param[in] {value} dp数据缓冲区地址
+ 584           * @param[in] {len} dp数据长度
+ 585           * @return 当前dp值
+ 586           * @note   Null
+ 587           */
+ 588          unsigned char mcu_get_dp_download_enum(const unsigned char value[],unsigned short len)
+ 589          {
+ 590   1          return(value[0]);
+ 591   1      }
+*** WARNING C280 IN LINE 588 OF mcu_sdk\mcu_api.c: 'len': unreferenced local variable
+ 592          
+ 593          /**
+ 594           * @brief  mcu获取value型下发dp值
+ 595           * @param[in] {value} dp数据缓冲区地址
+ 596           * @param[in] {len} dp数据长度
+ 597           * @return 当前dp值
+ 598           * @note   Null
+ 599           */
+ 600          unsigned long mcu_get_dp_download_value(const unsigned char value[],unsigned short len)
+ 601          {
+ 602   1          return(byte_to_int(value));
+ 603   1      }
+*** WARNING C280 IN LINE 600 OF mcu_sdk\mcu_api.c: 'len': unreferenced local variable
+ 604          
+ 605          /**
+ 606           * @brief  串口接收数据暂存处理
+ 607           * @param[in] {value} 串口收到的1字节数据
+ 608           * @return Null
+C51 COMPILER V9.54   MCU_API                                                               02/16/2021 21:59:40 PAGE 11  
+
+ 609           * @note   在MCU串口处理函数中调用该函数,并将接收到的数据作为参数传入
+ 610           */
+ 611          void uart_receive_input(unsigned char value)
+ 612          {
+ 613   1         // #error "请在串口接收中断中调用uart_receive_input(value),串口数据由MCU_SDK处理,用�
+             -��请勿再另行处理,完成后删除该行" 
+ 614   1          
+ 615   1          if(1 == rx_buf_out - rx_buf_in) {
+ 616   2              //串口接收缓存已满
+ 617   2          }else if((rx_buf_in > rx_buf_out) && ((rx_buf_in - rx_buf_out) >= sizeof(wifi_uart_rx_buf))) {
+ 618   2              //串口接收缓存已满
+ 619   2          }else {
+ 620   2              //串口接收缓存未满
+ 621   2              if(rx_buf_in >= (unsigned char *)(wifi_uart_rx_buf + sizeof(wifi_uart_rx_buf))) {
+ 622   3                  rx_buf_in = (unsigned char *)(wifi_uart_rx_buf);
+ 623   3              }
+ 624   2              
+ 625   2              *rx_buf_in ++ = value;
+ 626   2          }
+ 627   1      }
+ 628          
+ 629          /**
+ 630           * @brief  串口接收多个字节数据暂存处理
+ 631           * @param[in] {value} 串口要接收的数据的源地址
+ 632           * @param[in] {data_len} 串口要接收的数据的数据长度
+ 633           * @return Null
+ 634           * @note   如需要支持一次多字节缓存，可调用该函数
+ 635           */
+ 636          void uart_receive_buff_input(unsigned char value[], unsigned short data_len)
+ 637          {
+ 638   1         // #error "请在需要一次缓存多个字节串口数据处调用此函数,串口数据由MCU_SDK处
+             -理,用户请勿再另行处理,完成后删除该行" 
+ 639   1          
+ 640   1          unsigned short i = 0;
+ 641   1          for(i = 0; i < data_len; i++) {
+ 642   2              uart_receive_input(value[i]);
+ 643   2          }
+ 644   1      }
+ 645          
+ 646          /**
+ 647           * @brief  wifi串口数据处理服务
+ 648           * @param  Null
+ 649           * @return Null
+ 650           * @note   在MCU主函数while循环中调用该函数
+ 651           */
+ 652          void wifi_uart_service(void)
+ 653          {
+ 654   1          //#error "请直接在main函数的while(1){}中添加wifi_uart_service(),调用该函数不要加任�
+             -��条件判断,完成后删除该行" 
+ 655   1          static unsigned short rx_in = 0;
+ 656   1          unsigned short offset = 0;
+ 657   1          unsigned short rx_value_len = 0;
+ 658   1          
+ 659   1          while((rx_in < sizeof(wifi_data_process_buf)) && with_data_rxbuff() > 0) {
+ 660   2              wifi_data_process_buf[rx_in ++] = take_byte_rxbuff();
+ 661   2          }
+ 662   1          
+ 663   1          if(rx_in < PROTOCOL_HEAD)
+ 664   1              return;
+ 665   1          
+ 666   1          while((rx_in - offset) >= PROTOCOL_HEAD) {
+ 667   2              if(wifi_data_process_buf[offset + HEAD_FIRST] != FRAME_FIRST) {
+C51 COMPILER V9.54   MCU_API                                                               02/16/2021 21:59:40 PAGE 12  
+
+ 668   3                  offset ++;
+ 669   3                  continue;
+ 670   3              }
+ 671   2              
+ 672   2              if(wifi_data_process_buf[offset + HEAD_SECOND] != FRAME_SECOND) {
+ 673   3                  offset ++;
+ 674   3                  continue;
+ 675   3              }  
+ 676   2              
+ 677   2              if(wifi_data_process_buf[offset + PROTOCOL_VERSION] != MCU_RX_VER) {
+ 678   3                  offset += 2;
+ 679   3                  continue;
+ 680   3              }      
+ 681   2              
+ 682   2              rx_value_len = wifi_data_process_buf[offset + LENGTH_HIGH] * 0x100;
+ 683   2              rx_value_len += (wifi_data_process_buf[offset + LENGTH_LOW] + PROTOCOL_HEAD);
+ 684   2              if(rx_value_len > sizeof(wifi_data_process_buf) + PROTOCOL_HEAD) {
+ 685   3                  offset += 3;
+ 686   3                  continue;
+ 687   3              }
+ 688   2              
+ 689   2              if((rx_in - offset) < rx_value_len) {
+ 690   3                  break;
+ 691   3              }
+ 692   2              
+ 693   2              //数据接收完成
+ 694   2              if(get_check_sum((unsigned char *)wifi_data_process_buf + offset,rx_value_len - 1) != wifi_data_pr
+             -ocess_buf[offset + rx_value_len - 1]) {
+ 695   3                  //校验出错
+ 696   3                  //printf("crc error (crc:0x%X  but data:0x%X)\r\n",get_check_sum((unsigned char *)wifi_data_pr
+             -ocess_buf + offset,rx_value_len - 1),wifi_data_process_buf[offset + rx_value_len - 1]);
+ 697   3                  offset += 3;
+ 698   3                  continue;
+ 699   3              }
+ 700   2              
+ 701   2              data_handle(offset);
+ 702   2              offset += rx_value_len;
+ 703   2          }//end while
+ 704   1      
+ 705   1          rx_in -= offset;
+ 706   1          if(rx_in > 0) {
+ 707   2              my_memcpy((char *)wifi_data_process_buf, (const char *)wifi_data_process_buf + offset, rx_in);
+ 708   2          }
+ 709   1      }
+ 710          
+ 711          /**
+ 712           * @brief  协议串口初始化函数
+ 713           * @param  Null
+ 714           * @return Null
+ 715           * @note   在MCU初始化代码中调用该函数
+ 716           */
+ 717          void wifi_protocol_init(void)
+ 718          {
+ 719   1          //#error " 请在main函数中添加wifi_protocol_init()完成wifi协议初始化,并删除该行"
+ 720   1          rx_buf_in = (unsigned char *)wifi_uart_rx_buf;
+ 721   1          rx_buf_out = (unsigned char *)wifi_uart_rx_buf;
+ 722   1          
+ 723   1          stop_update_flag = DISABLE;
+ 724   1          
+ 725   1      #ifndef WIFI_CONTROL_SELF_MODE
+ 726   1          wifi_work_state = WIFI_SATE_UNKNOW;
+ 727   1      #endif
+C51 COMPILER V9.54   MCU_API                                                               02/16/2021 21:59:40 PAGE 13  
+
+ 728   1      }
+ 729          
+ 730          
+ 731          
+ 732          #ifndef WIFI_CONTROL_SELF_MODE
+ 733          /**
+ 734           * @brief  MCU获取复位wifi成功标志
+ 735           * @param  Null
+ 736           * @return 复位标志
+ 737           * -           0(RESET_WIFI_ERROR):失败
+ 738           * -           1(RESET_WIFI_SUCCESS):成功
+ 739           * @note   1:MCU主动调用mcu_reset_wifi()后调用该函数获取复位状态
+ 740           *         2:如果为模块自处理模式,MCU无须调用该函数
+ 741           */
+ 742          unsigned char mcu_get_reset_wifi_flag(void)
+ 743          {
+ 744   1          return reset_wifi_flag;
+ 745   1      }
+ 746          
+ 747          /**
+ 748           * @brief  MCU主动重置wifi工作模式
+ 749           * @param  Null
+ 750           * @return Null
+ 751           * @note   1:MCU主动调用,通过mcu_get_reset_wifi_flag()函数获取重置wifi是否成功
+ 752           *         2:如果为模块自处理模式,MCU无须调用该函数
+ 753           */
+ 754          void mcu_reset_wifi(void)
+ 755          {
+ 756   1          reset_wifi_flag = RESET_WIFI_ERROR;
+ 757   1          
+ 758   1          wifi_uart_write_frame(WIFI_RESET_CMD, MCU_TX_VER, 0);
+ 759   1      }
+ 760          
+ 761          /**
+ 762           * @brief  获取设置wifi状态成功标志
+ 763           * @param  Null
+ 764           * @return wifimode flag
+ 765           * -           0(SET_WIFICONFIG_ERROR):失败
+ 766           * -           1(SET_WIFICONFIG_SUCCESS):成功
+ 767           * @note   1:MCU主动调用mcu_set_wifi_mode()后调用该函数获取复位状态
+ 768           *         2:如果为模块自处理模式,MCU无须调用该函数
+ 769           */
+ 770          unsigned char mcu_get_wifimode_flag(void)
+ 771          {
+ 772   1          return set_wifimode_flag;
+ 773   1      }
+ 774          
+ 775          /**
+ 776           * @brief  MCU设置wifi工作模式
+ 777           * @param[in] {mode} 进入的模式
+ 778           * @ref        0(SMART_CONFIG):进入smartconfig模式
+ 779           * @ref        1(AP_CONFIG):进入AP模式
+ 780           * @return Null
+ 781           * @note   1:MCU主动调用
+ 782           *         2:成功后,可判断set_wifi_config_state是否为TRUE;TRUE表示为设置wifi工作模式成�
+             -��
+ 783           *         3:如果为模块自处理模式,MCU无须调用该函数
+ 784           */
+ 785          void mcu_set_wifi_mode(unsigned char mode)
+ 786          {
+ 787   1          unsigned char length = 0;
+ 788   1          
+C51 COMPILER V9.54   MCU_API                                                               02/16/2021 21:59:40 PAGE 14  
+
+ 789   1          set_wifimode_flag = SET_WIFICONFIG_ERROR;
+ 790   1          
+ 791   1          length = set_wifi_uart_byte(length, mode);
+ 792   1          
+ 793   1          wifi_uart_write_frame(WIFI_MODE_CMD, MCU_TX_VER, length);
+ 794   1      }
+ 795          
+ 796          /**
+ 797           * @brief  MCU主动获取当前wifi工作状态
+ 798           * @param  Null
+ 799           * @return wifi work state
+ 800           * -          SMART_CONFIG_STATE: smartconfig配置状态
+ 801           * -          AP_STATE: AP配置状态
+ 802           * -          WIFI_NOT_CONNECTED: WIFI配置成功但未连上路由器
+ 803           * -          WIFI_CONNECTED: WIFI配置成功且连上路由器
+ 804           * -          WIFI_CONN_CLOUD: WIFI已经连接上云服务器
+ 805           * -          WIFI_LOW_POWER: WIFI处于低功耗模式
+ 806           * -          SMART_AND_AP_STATE: WIFI smartconfig&AP 模式
+ 807           * @note   如果为模块自处理模式,MCU无须调用该函数
+ 808           */
+ 809          unsigned char mcu_get_wifi_work_state(void)
+ 810          {
+ 811   1          return wifi_work_state;
+ 812   1      }
+ 813          #endif
+ 814          
+ 815          #ifdef SUPPORT_GREEN_TIME
+              /**
+               * @brief  MCU获取格林时间
+               * @param  Null
+               * @return Null
+               * @note   MCU需要自行调用该功能
+               */
+              void mcu_get_green_time(void)
+              {
+                  wifi_uart_write_frame(GET_ONLINE_TIME_CMD, MCU_TX_VER, 0);
+              }
+              #endif
+ 827          
+ 828          #ifdef SUPPORT_MCU_RTC_CHECK
+              /**
+               * @brief  MCU获取系统时间,用于校对本地时钟
+               * @param  Null
+               * @return Null
+               * @note   MCU主动调用完成后在mcu_write_rtctime函数内校对rtc时钟
+               */
+              void mcu_get_system_time(void)
+              {
+                  wifi_uart_write_frame(GET_LOCAL_TIME_CMD, MCU_TX_VER, 0);
+              }
+              #endif
+ 840          
+ 841          #ifdef WIFI_TEST_ENABLE
+              /**
+               * @brief  mcu发起wifi功能测试
+               * @param  Null
+               * @return Null
+               * @note   MCU需要自行调用该功能
+               */
+              void mcu_start_wifitest(void)
+              {
+                  wifi_uart_write_frame(WIFI_TEST_CMD, MCU_TX_VER, 0);
+C51 COMPILER V9.54   MCU_API                                                               02/16/2021 21:59:40 PAGE 15  
+
+              }
+              #endif
+ 853          
+ 854          #ifdef WIFI_HEARTSTOP_ENABLE
+              /**
+               * @brief  通知WIFI模组关闭心跳
+               * @param  Null
+               * @return Null
+               * @note   MCU需要自行调用该功能
+               */
+              void wifi_heart_stop(void)
+              {
+                  wifi_uart_write_frame(HEAT_BEAT_STOP, MCU_TX_VER, 0);
+              }
+              #endif
+ 866          
+ 867          #ifdef GET_WIFI_STATUS_ENABLE
+              /**
+               * @brief  获取当前wifi联网状态
+               * @param  Null
+               * @return Null
+               * @note   MCU需要自行调用该功能
+               */
+              void mcu_get_wifi_connect_status(void)
+              {
+                  wifi_uart_write_frame(GET_WIFI_STATUS_CMD, MCU_TX_VER, 0);
+              }
+              #endif
+ 879          
+ 880          #ifdef WIFI_STREAM_ENABLE
+              /**
+               * @brief  流服务发送
+               * @param[in] {id} ID号
+               * @param[in] {buffer} 发送包的地址
+               * @param[in] {buf_len} 发送包长度
+               * @return 流服务传输结果
+               * -           0(ERROR): 失败
+               * -           1(SUCCESS): 成功
+               * @note   MCU需要自行实现该功能
+               */
+              unsigned char stream_trans_send(unsigned int id, unsigned char *buffer, unsigned long buf_len)
+              {
+                  unsigned long map_offset = 0;
+                  unsigned int pack_num = 0;
+                  unsigned int rest_length = 0;
+              
+                  if(stop_update_flag == ENABLE)
+                      return ERROR;
+              
+                  pack_num = buf_len / STREM_PACK_LEN;
+                  rest_length = buf_len - pack_num * STREM_PACK_LEN;
+                  if (rest_length > 0) {
+                      pack_num++;
+                  }
+              
+                  int this_len = STREM_PACK_LEN;
+                  for (int cnt = 0; cnt < pack_num; cnt++,map_offset += this_len) {
+                      if (cnt == pack_num - 1 && rest_length > 0) {
+                          this_len = rest_length;
+                      }else {
+                          this_len = STREM_PACK_LEN;
+                      }
+C51 COMPILER V9.54   MCU_API                                                               02/16/2021 21:59:40 PAGE 16  
+
+              
+                      if(ERROR == stream_trans(id, map_offset, buffer + map_offset, this_len)) {
+                          //mcu正在升级中，不可以进行流服务传输
+                          //printf("is upgrade\n");
+                          return ERROR;
+                      }
+                      
+                      #error "请根据提示，自行完善流服务发送代码，完成后请删除该行"
+                      /*  如果MCU可以使用多进程或多线程，可以将此函数放在一个单独的进程或�
+             -��程里执行，并打开下面所示的代码  */
+                      /*
+                      while(0xff == stream_status); //等待模块回复
+                      
+                      if(0x00 != stream_status) {
+                          //失败  可在 stream_trans_send_result 函数中查看错误码
+                          return ERROR;
+                      }
+                      */
+                      
+                      /*  如果MCU不支持多进程或多线程，使用此函数时每次只发一包（数据长度�
+             -��大于STREM_PACK_LEN），
+                      发送完之后在 stream_trans_send_result 函数中处理模块返回的结果，发送成功时
+             -再次调用此函数发送下一包，注意包偏移要增加  */
+                  }
+                  
+                  return SUCCESS;
+              }
+              
+              /**
+               * @brief  多地图流服务发送
+               * @param[in] {id} 地图流服务会话ID
+               * @param[in] {sub_id} 子地图ID
+               * @param[in] {sub_id_pro_mode} 子地图ID数据处理方式
+               * @ref       0x00: 继续累加
+               * @ref       0x01: 清除上传的数据
+               * @param[in] {buffer} 数据包发送的地址
+               * @param[in] {buf_len} 数据包发送的长度
+               * @return 流服务传输结果
+               * -           0(ERROR): 失败
+               * -           1(SUCCESS): 成功
+               * @note   MCU需要自行实现该功能
+               */
+              unsigned char maps_stream_trans_send(unsigned int id, unsigned char sub_id, unsigned char sub_id_pro_mode,
+             - unsigned char *buffer, unsigned long buf_len)
+              {
+                  unsigned long map_offset = 0;
+                  unsigned int pack_num = 0;
+                  unsigned int rest_length = 0;
+                  unsigned char pro_ver = 0; //地图服务协议版本 默认为0
+              
+                  if(stop_update_flag == ENABLE)
+                      return SUCCESS;
+              
+                  pack_num = buf_len / STREM_PACK_LEN;
+                  rest_length = buf_len - pack_num * STREM_PACK_LEN;
+                  if (rest_length > 0) {
+                      pack_num++;
+                  }
+              
+                  int this_len = STREM_PACK_LEN;
+                  for (int cnt = 0; cnt < pack_num; cnt++,map_offset += this_len) {
+                      if (cnt == pack_num - 1 && rest_length > 0) {
+C51 COMPILER V9.54   MCU_API                                                               02/16/2021 21:59:40 PAGE 17  
+
+                          this_len = rest_length;
+                      }else {
+                          this_len = STREM_PACK_LEN;
+                      }
+              
+                      if(ERROR == maps_stream_trans(pro_ver, id, sub_id, sub_id_pro_mode, map_offset, buffer + map_offse
+             -t, this_len)) {
+                          //mcu正在升级中，不可以进行流服务传输
+                          //printf("is upgrade\n");
+                          return ERROR;
+                      }
+                      
+                      #error "请根据提示，自行完善流服务发送代码，完成后请删除该行"
+                      /*  如果MCU可以使用多进程或多线程，可以将此函数放在一个单独的进程或�
+             -��程里执行，并打开下面所示的代码  */
+                      /*
+                      while(0xff == maps_stream_status); //等待模块回复
+                      
+                      if(0x00 != maps_stream_status) {
+                          //失败  可在 maps_stream_trans_send_result 函数中查看错误码
+                          return ERROR;
+                      }
+                      */
+                      
+                      /*  如果MCU不支持多进程或多线程，使用此函数时每次只发一包（数据长度�
+             -��大于STREM_PACK_LEN），
+                      发送完之后在 maps_stream_trans_send_result 函数中处理模块返回的结果，发送成�
+             -��时再次调用此函数发送下一包，注意包偏移要增加  */
+                  }
+                  
+                  return SUCCESS;
+              }
+              #endif
+1000          
+1001          #ifdef WIFI_CONNECT_TEST_ENABLE
+              /**
+               * @brief  mcu发起wifi功能测试(连接指定路由)
+               * @param[in] {ssid_buf} 存放路由器名称字符串数据的地址(ssid长度最大支持32个字节)
+               * @param[in] {passwd_buffer} 存放路由器名称字符串数据的地址(passwd长度最大支持64个�
+             -��节)
+               * @return Null
+               * @note   MCU需要自行调用该功能
+               */
+              void mcu_start_connect_wifitest(unsigned char *ssid_buf,unsigned char *passwd_buffer)
+              {
+                  unsigned short send_len = 0;
+              
+                  if( my_strlen(ssid_buf) > 32 || my_strlen(passwd_buffer) > 64) {
+                      //printf("ssid_buf or passwd_buffer is too long!");
+                      return;
+                  }
+                  
+                  send_len = set_wifi_uart_buffer(send_len, "{\"ssid\":\"", my_strlen("{\"ssid\":\""));
+                  send_len = set_wifi_uart_buffer(send_len,ssid_buf,my_strlen(ssid_buf));
+                  send_len = set_wifi_uart_buffer(send_len, "\",\"password\":\"", my_strlen("\",\"password\":\""));
+                  send_len = set_wifi_uart_buffer(send_len,passwd_buffer,my_strlen(passwd_buffer));
+                  send_len = set_wifi_uart_buffer(send_len, "\"}", my_strlen("\"}"));
+              
+                  wifi_uart_write_frame(WIFI_CONNECT_TEST_CMD, MCU_TX_VER, send_len);
+              }
+              #endif
+1027          
+C51 COMPILER V9.54   MCU_API                                                               02/16/2021 21:59:40 PAGE 18  
+
+1028          #ifdef GET_MODULE_MAC_ENABLE
+              /**
+               * @brief  获取模块MAC
+               * @param  Null
+               * @return Null
+               * @note   MCU需要自行调用该功能
+               */
+              void mcu_get_module_mac(void)
+              {
+                  wifi_uart_write_frame(GET_MAC_CMD, MCU_TX_VER, 0);
+              }
+              #endif
+1040          
+1041          #ifdef IR_TX_RX_TEST_ENABLE
+              /**
+               * @brief  mcu发起红外进入收发产测
+               * @param  Null
+               * @return Null
+               * @note   MCU需要自行调用该功能
+               */
+              void mcu_start_ir_test(void)
+              {
+                  wifi_uart_write_frame(IR_TX_RX_TEST_CMD, MCU_TX_VER, 0);
+              }
+              #endif
+1053          
+1054          #ifdef MODULE_EXPANDING_SERVICE_ENABLE
+              /**
+               * @brief  打开模块时间服务通知
+               * @param[in] {time_type} 时间类型
+               * @ref       0x00: 格林时间
+               * @ref       0x01: 本地时间
+               * @return Null
+               * @note   MCU需要自行调用该功能
+               */
+              void open_module_time_serve(unsigned char time_type)
+              {
+                  unsigned short send_len = 0;
+                  send_len = set_wifi_uart_byte(send_len, 0x01);
+                  send_len = set_wifi_uart_byte(send_len, time_type);
+                  wifi_uart_write_frame(MODULE_EXTEND_FUN_CMD, MCU_TX_VER, send_len);
+              }
+              
+              /**
+               * @brief  主动请求天气服务数据
+               * @param  Null
+               * @return Null
+               * @note   MCU需要自行调用该功能
+               */
+              void request_weather_serve(void)
+              {
+                  unsigned short send_len = 0;
+                  send_len = set_wifi_uart_byte(send_len, 0x03);
+                  wifi_uart_write_frame(MODULE_EXTEND_FUN_CMD, MCU_TX_VER, send_len);
+              }
+              
+              /**
+               * @brief  打开模块重置状态通知
+               * @param  Null
+               * @return Null
+               * @note   MCU需要自行调用该功能
+               */
+C51 COMPILER V9.54   MCU_API                                                               02/16/2021 21:59:40 PAGE 19  
+
+              void open_module_reset_state_serve(void)
+              {
+                  unsigned short send_len = 0;
+                  send_len = set_wifi_uart_byte(send_len, 0x04);
+                  wifi_uart_write_frame(MODULE_EXTEND_FUN_CMD, MCU_TX_VER, send_len);
+              }
+              #endif
+1097          
+1098          #ifdef BLE_RELATED_FUNCTION_ENABLE
+              /**
+               * @brief  mcu发起蓝牙功能性测试（扫描指定蓝牙信标）
+               * @param  Null
+               * @return Null
+               * @note   MCU需要自行调用该功能
+               */
+              void mcu_start_BLE_test(void)
+              {
+                  unsigned short send_len = 0;
+                  send_len = set_wifi_uart_byte(send_len, 0x01);
+                  wifi_uart_write_frame(BLE_TEST_CMD, MCU_TX_VER, send_len);
+              }
+              #endif
+1112          
+1113          #ifdef VOICE_MODULE_PROTOCOL_ENABLE
+              /**
+               * @brief  获取语音状态码
+               * @param  Null
+               * @return Null
+               * @note   MCU需要自行调用该功能
+               */
+              void get_voice_state(void)
+              {
+                  wifi_uart_write_frame(GET_VOICE_STATE_CMD, MCU_TX_VER, 0);
+              }
+              
+              /**
+               * @brief  MIC静音设置
+               * @param[in] {set_val} 静音设置值
+               * @ref       0x00: mic开启
+               * @ref       0x01: mic静音
+               * @ref       0xA0: 查询静音状态
+               * @return Null
+               * @note   MCU需要自行调用该功能
+               */
+              void set_voice_MIC_silence(unsigned char set_val)
+              {
+                  unsigned short send_len = 0;
+                  send_len = set_wifi_uart_byte(send_len, set_val);
+                  wifi_uart_write_frame(MIC_SILENCE_CMD, MCU_TX_VER, send_len);
+              }
+              
+              /**
+               * @brief  speaker音量设置
+               * @param[in] {set_val} 音量设置值
+               * @ref       0~10: 音量范围
+               * @ref       0xA0: 查询音量值
+               * @return Null
+               * @note   MCU需要自行调用该功能
+               */
+              void set_speaker_voice(unsigned char set_val)
+              {
+                  unsigned short send_len = 0;
+C51 COMPILER V9.54   MCU_API                                                               02/16/2021 21:59:40 PAGE 20  
+
+                  send_len = set_wifi_uart_byte(send_len, set_val);
+                  wifi_uart_write_frame(SET_SPEAKER_VOLUME_CMD, MCU_TX_VER, send_len);
+              }
+              
+              /**
+               * @brief  音频产测
+               * @param[in] {set_val} 音频产测值
+               * @ref       0x00: 关闭音频产测
+               * @ref       0x01: mic1音频环路测试
+               * @ref       0x02: mic2音频环路测试
+               * @ref       0xA0: 查询当前产测状态
+               * @return Null
+               * @note   MCU需要自行调用该功能
+               */
+              void voice_test(unsigned char test_val)
+              {
+                  unsigned short send_len = 0;
+                  send_len = set_wifi_uart_byte(send_len, test_val);
+                  wifi_uart_write_frame(VOICE_TEST_CMD, MCU_TX_VER, send_len);
+              }
+              
+              /**
+               * @brief  唤醒产测
+               * @param  Null
+               * @return Null
+               * @note   MCU需要自行调用该功能
+               */
+              void voice_awaken_test(void)
+              {
+                  wifi_uart_write_frame(VOICE_AWAKEN_TEST_CMD, MCU_TX_VER, 0);
+              }
+              
+              /**
+               * @brief  语音模组MCU功能设置
+               * @param[in] {play} 播放/暂停功能 1(播放) / 0(暂停)
+               * @param[in] {bt_play} 蓝牙开关功能 1(开) / 0(关)
+               * @return Null
+               * @note   MCU需要自行调用该功能
+               */
+              void voice_mcu_fun_set(unsigned char play, unsigned char bt_play)
+              {
+                  unsigned short send_len = 0;
+                  unsigned char str[50];
+                  
+                  //MCU设置暂仅支持”播放/暂停” ”蓝牙开关”
+                  
+                  sprintf((char*)str,"{\"play\":%s,\"bt_play\":%s}", play?"true":"false", bt_play?"true":"false");
+                  
+                  send_len = set_wifi_uart_byte(send_len, 0x00);
+                  send_len = set_wifi_uart_buffer(send_len, str, my_strlen(str));
+                  wifi_uart_write_frame(VOICE_EXTEND_FUN_CMD, MCU_TX_VER, send_len);
+              }
+              #endif
+1205          
+1206          
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =   2498    ----
+   CONSTANT SIZE    =   ----    ----
+   XDATA SIZE       =      2     100
+   PDATA SIZE       =   ----    ----
+C51 COMPILER V9.54   MCU_API                                                               02/16/2021 21:59:40 PAGE 21  
+
+   DATA SIZE        =   ----    ----
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =   ----    ----
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  3 WARNING(S),  0 ERROR(S)

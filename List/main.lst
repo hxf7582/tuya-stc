@@ -1,0 +1,210 @@
+C51 COMPILER V9.54   MAIN                                                                  02/16/2021 21:59:38 PAGE 1   
+
+
+C51 COMPILER V9.54, COMPILATION OF MODULE MAIN
+OBJECT MODULE PLACED IN .\Obj\main.obj
+COMPILER INVOKED BY: D:\Keil_v5\C51\BIN\C51.EXE src\main.c LARGE OPTIMIZE(9,SPEED) BROWSE INCDIR(.\;.\src;.\mcu_sdk) DEB
+                    -UG OBJECTEXTEND PRINT(.\List\main.lst) TABS(2) OBJECT(.\Obj\main.obj)
+
+line level    source
+
+   1          /******************************************************************************
+   2          文件名称: Main.c
+   3          文件标识: STC8A8K64S4A12
+   4          摘    要: 主函数
+   5          当前版本: V1.0  
+   6          完成日期: 2021.02.07
+   7          *******************************************************************************/
+   8          #define MAINWORK_GLOBALS
+   9          #include "include.h"
+  10          #include "wifi.h"
+  11          volatile uint8_t is_read_time = 0;
+  12          uint8_t wifi_state;
+  13          /*****************************************************************************
+  14          函数名称 : Bsp_Init
+  15          功能描述 : 初始化硬件
+  16          输入参数 : 无
+  17          返回参数 : 无
+  18          使用说明 : 无
+  19          *****************************************************************************/
+  20          static void Bsp_Init(void)
+  21          { 
+  22   1        P0M1 = 0x00; P0M0 = 0x00; //P0
+  23   1        P1M1 = 0x00; P1M0 = 0x48; //P1(00000000B,01001000B)
+  24   1        LED6=0;  //开关关
+  25   1        Init_Uart2();
+  26   1        Init_Uart1();//串口1-2初始化       
+  27   1        wifi_protocol_init();//WiFi模组初始化
+  28   1        I2C_init();          //I2C初始化  
+  29   1        SHT_Init();          //SHT3X初始化
+  30   1        timer0_init();       //定时器初始化 
+  31   1        key_init();
+  32   1        OLED_Init();         //OLED初始化
+  33   1        OLED_Clear();        //OLED清屏
+  34   1      }
+  35          /*****************************************************************************
+  36          函数名称 : Boot_animation
+  37          功能描述 : 开机画面
+  38          输入参数 : 无
+  39          返回参数 : 无
+  40          使用说明 : 无
+  41          *****************************************************************************/
+  42          void Boot_animation()
+  43          {
+  44   1        OLED_DrawBMP(0,0,128,8,table);
+  45   1        delay_ms(1000);   
+  46   1        OLED_Clear(); 
+  47   1        OLED_DrawBMP(0,1,128,4,tableeda);
+  48   1        OLED_ShowStr(32,5,"OSHWHub",16);
+  49   1        delay_ms(1500);
+  50   1        OLED_Clear();
+  51   1          
+  52   1        OLED_ShowCHinese(10,2,0);
+  53   1        OLED_ShowCHinese(28,2,1);
+  54   1        OLED_ShowCHinese(46,2,2);
+C51 COMPILER V9.54   MAIN                                                                  02/16/2021 21:59:38 PAGE 2   
+
+  55   1        OLED_ShowCHinese(62,2,3);
+  56   1        OLED_ShowCHinese(80,2,4);
+  57   1        OLED_ShowCHinese(98,2,5);
+  58   1        
+  59   1        OLED_ShowCHinese(28,4,2);
+  60   1        OLED_ShowCHinese(46,4,4);
+  61   1        OLED_ShowStr(60,4,":",16);
+  62   1        OLED_ShowStr(88,4,".",16);
+  63   1        
+  64   1        OLED_ShowCHinese(28,6,3);
+  65   1        OLED_ShowCHinese(46,6,4);
+  66   1        OLED_ShowStr(60,6,":",16);
+  67   1      }
+  68          
+  69          
+  70          /*****************************************************************************
+  71          函数名称 : wifi_work_state_led
+  72          功能描述 : wifi状态查询
+  73          输入参数 : 无
+  74          返回参数 : 无
+  75          使用说明 : 无
+  76          *****************************************************************************/
+  77          void wifi_work_state_led(void)
+  78          {
+  79   1        wifi_state = mcu_get_wifi_work_state();
+  80   1        switch(wifi_state)
+  81   1        {
+  82   2        case SMART_CONFIG_STATE:            //smartconfig配置状态
+  83   2          OLED_ShowStr(110,0,"S!",8); 
+  84   2          OLED_ShowStr(122,0," ",8);
+  85   2          P0=0xFF;
+  86   2          LED1=0;
+  87   2          break;
+  88   2          
+  89   2        case AP_STATE:                      //AP配置状态
+  90   2          OLED_ShowStr(110,0,"A!",8);
+  91   2          OLED_ShowStr(122,0," ",8);
+  92   2          P0=0xFF;
+  93   2          LED2=0;
+  94   2          break;
+  95   2          
+  96   2        case WIFI_NOT_CONNECTED:            //WIFI配置成功但未连上路由器
+  97   2          OLED_DrawBMP(0,0,24,1,UI1);
+  98   2          //OLED_ShowStr(24,0,"  ",8);
+  99   2          break;
+ 100   2          
+ 101   2        case WIFI_CONNECTED:                //WIFI配置成功且连上路由器
+ 102   2          OLED_DrawBMP(0,0,24,1,UI2);
+ 103   2          OLED_ShowStr(24,0,"                 ",8);
+ 104   2          P0=0xFF;
+ 105   2          LED4=0;
+ 106   2          break;
+ 107   2          
+ 108   2        case WIFI_CONN_CLOUD:               //WIFI已经连接上云服务器
+ 109   2          OLED_DrawBMP(0,0,16,1,UI3);
+ 110   2          OLED_ShowStr(24,0,"              ",8);
+ 111   2         
+ 112   2          P0=0xFF;
+ 113   2          LED4=0;
+ 114   2          LED5=0;
+ 115   2          break;
+ 116   2          
+C51 COMPILER V9.54   MAIN                                                                  02/16/2021 21:59:38 PAGE 3   
+
+ 117   2        case WIFI_LOW_POWER:                //WIFI处于低功耗模式
+ 118   2          OLED_DrawBMP(0,0,24,1,UI4);
+ 119   2          //OLED_ShowStr(24,0,"  ",8);
+ 120   2          break;
+ 121   2          
+ 122   2        case SMART_AND_AP_STATE:            //WIFI smartconfig&AP 模式
+ 123   2          OLED_ShowStr(110,0,"SA",8);
+ 124   2          OLED_ShowStr(122,0," ",8);
+ 125   2          P0=0xFF;
+ 126   2          LED3=0;
+ 127   2          break;
+ 128   2          
+ 129   2        default:                            //未知状态
+ 130   2          OLED_DrawBMP(0,0,24,1,UI1);
+ 131   2          //OLED_ShowStr(24,0,"  ",8);
+ 132   2          OLED_ShowStr(36,0,"WiFiStartr",8);
+ 133   2          P0=0xFF;
+ 134   2          LED3=0;
+ 135   2         break;
+ 136   2        }
+ 137   1      }
+ 138          /*****************************************************************************
+ 139          函数名称 : read_sensor
+ 140          功能描述 : 读取传感器
+ 141          输入参数 : 无
+ 142          返回参数 : 无
+ 143          使用说明 : 无
+ 144          *****************************************************************************/
+ 145          static void read_sensor(void)
+ 146          { 
+ 147   1        //Get_Voltage();         //读取电池电压
+ 148   1        sht30_read();          //读取温湿度 
+ 149   1      }
+ 150          /*****************************************************************************
+ 151          函数名称 : main
+ 152          功能描述 : 主函数
+ 153          输入参数 : 无
+ 154          返回参数 : 无
+ 155          使用说明 : 无
+ 156          *****************************************************************************/
+ 157          void main(void)
+ 158          {   
+ 159   1        Bsp_Init();//初始化 
+ 160   1        Boot_animation();//开机动画   
+ 161   1        read_sensor();
+ 162   1        while(1)
+ 163   1        { 
+ 164   2          wifi_uart_service();   //wifi数据处理   
+ 165   2          key_scan();            //按键扫描   
+ 166   2          wifi_work_state_led(); //wifi状态指示灯
+ 167   2          if(is_read_time == 1)  //15秒读取一次
+ 168   2          { 
+ 169   3                  
+ 170   3            LED5=1; 
+ 171   3            OLED_DrawBMP(0,0,24,1,UI3);
+ 172   3            sht30_read();          //读取温湿度                //读取传感器并上报   
+ 173   3          
+ 174   3            delay_ms(500);      
+ 175   3            OLED_ShowStr(18,0," ",8);
+ 176   3            is_read_time = 0;
+ 177   3          }
+ 178   2        }
+C51 COMPILER V9.54   MAIN                                                                  02/16/2021 21:59:38 PAGE 4   
+
+ 179   1        
+ 180   1      }
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =    631    ----
+   CONSTANT SIZE    =     67    ----
+   XDATA SIZE       =     12    ----
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =   ----    ----
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =   ----    ----
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)

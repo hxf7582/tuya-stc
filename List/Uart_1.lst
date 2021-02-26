@@ -1,0 +1,96 @@
+C51 COMPILER V9.54   UART_1                                                                02/16/2021 21:59:39 PAGE 1   
+
+
+C51 COMPILER V9.54, COMPILATION OF MODULE UART_1
+OBJECT MODULE PLACED IN .\Obj\Uart_1.obj
+COMPILER INVOKED BY: D:\Keil_v5\C51\BIN\C51.EXE src\Uart_1.c LARGE OPTIMIZE(9,SPEED) BROWSE INCDIR(.\;.\src;.\mcu_sdk) D
+                    -EBUG OBJECTEXTEND PRINT(.\List\Uart_1.lst) TABS(2) OBJECT(.\Obj\Uart_1.obj)
+
+line level    source
+
+   1          //串口1
+   2          //#include<Uart_1.h>
+   3          #define USER_UART_GLOBALS
+   4          #include "wifi.h"
+   5          #include "include.h"
+   6          static bit busy1=0;//COM1用到的发送忙标志
+   7          char wptr;
+   8          char rptr;
+   9          char buffer[16];
+  10          
+  11          //串口1中断处理程序
+  12          void INT_Uart1(void) interrupt 4
+  13          {
+  14   1        
+  15   1        if(TI)//清空发送中断标志位
+  16   1        {
+  17   2          TI = 0;
+  18   2          
+  19   2        if (RI)
+  20   2          {
+  21   3              RI = 0;
+  22   3              buffer[wptr++] = SBUF;
+  23   3              wptr &= 0x0f;
+  24   3            
+  25   3          } 
+  26   2        }
+  27   1      }
+  28          // 描述: 串口初始化程序.
+  29          void Init_Uart1(void)
+  30          {
+  31   1        SCON = 0x50;//
+  32   1        AUXR |= 0x01;//定时器2，1T
+  33   1        AUXR |= 0x04;
+  34   1        T2L = BRT;
+  35   1        T2H = BRT >> 8;   //设定定时初值  115200    22.1184MHZ
+  36   1        AUXR |= 0x10;   //启动定时器2
+  37   1        ES = 1;//允许COM1串行口中断
+  38   1        TI = 1; 
+  39   1        EA = 1;   //允许全局中断
+  40   1        REN = 1;  //允许接收
+  41   1        IE2 = ES2;  //使能串口中断
+  42   1        SBUF = 0x55; 
+  43   1      }
+  44          /*
+  45          //COM1发送一个字节
+  46          void Send_Data1(unsigned char dat)
+  47          {
+  48            
+  49            
+  50            while(!TI);           //若TI=0，在此等待
+  51              TI = 0;  
+  52            SBUF = dat;
+  53          }
+  54          //发送一个字符串
+C51 COMPILER V9.54   UART_1                                                                02/16/2021 21:59:39 PAGE 2   
+
+  55          void Send_Str1(unsigned char *s)
+  56          {
+  57            while(*s)
+  58            {
+  59              Send_Data1(*s++);
+  60            }
+  61          }
+  62          void SendString(unsigned char *s)
+  63          {
+  64            while(*s!='\0')
+  65            {
+  66              Send_Data1(*s); //调用SendData()函数依次发送单字节数据
+  67              s++;          //指针自增，便于发送下一个数据
+  68            }
+  69          }
+  70          */
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =    103    ----
+   CONSTANT SIZE    =   ----    ----
+   XDATA SIZE       =     18    ----
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =   ----    ----
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =      1    ----
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)
